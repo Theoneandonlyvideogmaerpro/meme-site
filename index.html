@@ -2,101 +2,193 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MeMeMe</title>
+  <title>MeMeMe Login Fix</title>
   <style>
-    body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
-    #memeCanvas { border: 2px solid #333; margin-top: 10px; }
-    .controls, .comments, .roast { margin-top: 20px; }
-    .comment-box { width: 300px; }
-    button { margin: 5px; padding: 10px; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      color: #ff3c00;
+      font-size: 2.5em;
+      margin-top: 20px;
+    }
+    input[type="text"] {
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      padding: 10px;
+      font-size: 1em;
+    }
+    button {
+      background: #fff;
+      color: #ff3c00;
+      border: none;
+      border-radius: 5px;
+      padding: 10px;
+      font-size: 1em;
+      margin: 5px;
+    }
+    canvas {
+      border: 3px solid #ff3c00;
+      margin-top: 10px;
+    }
+    .thumbnail {
+      width: 100px;
+      margin: 5px;
+      cursor: pointer;
+      border: 2px solid #ff3c00;
+    }
+    #gallery {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .speech {
+      background: #222;
+      border: 2px solid #ff3c00;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 10px;
+      display: inline-block;
+      max-width: 300px;
+    }
+    .username {
+      font-weight: bold;
+      color: #ff3c00;
+    }
+    .comment-box {
+      width: 300px;
+    }
+    #loginScreen, #editorScreen {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <h1>🔥 MeMeMe: Make Yourself Meme-able 🔥</h1>
 
-  <input type="file" id="imageUpload" accept="image/*"><br>
-  <input type="text" id="topText" placeholder="Top Text"><br>
-  <input type="text" id="bottomText" placeholder="Bottom Text"><br>
-  <button onclick="generateMeme()">Generate Meme</button><br>
-
-  <canvas id="memeCanvas" width="400" height="400"></canvas>
-
-  <div class="controls">
-    <button onclick="likeMeme()">👍 Like (<span id="likeCount">0</span>)</button>
+  <!-- Login Screen -->
+  <div id="loginScreen">
+    <h1>🔐 Enter Your Meme Name</h1>
+    <input type="text" id="usernameInput" placeholder="Username">
+    <button onclick="login()">Enter</button>
   </div>
 
-  <div class="comments">
-    <h3>💬 Comments</h3>
+  <!-- Main Screen -->
+  <div id="mainScreen" style="display:none;">
+    <h1>🔥 MeMeMe: Tactical Meme Arena 🔥</h1>
+    <input type="file" id="imageUpload" accept="image/*" multiple hidden>
+    <button onclick="document.getElementById('imageUpload').click()">📸 Post a Pic</button>
+    <div id="gallery"></div>
+  </div>
+
+  <!-- Meme Editor -->
+  <div id="editorScreen" style="display:none;">
+    <canvas id="memeCanvas" width="400" height="400"></canvas><br>
+    <input type="text" id="topText" placeholder="Top Text">
+    <input type="text" id="bottomText" placeholder="Bottom Text"><br>
+    <button onclick="generateMeme()">🎨 Add Text</button>
+    <h3>💬 Clapbacks</h3>
     <input type="text" id="commentInput" class="comment-box" placeholder="Say something...">
     <button onclick="addComment()">Post</button>
-    <ul id="commentList"></ul>
-  </div>
-
-  <div class="roast">
-    <h3>🤖 Roast Bot</h3>
-    <button onclick="roastMeme()">Roast Me</button>
-    <p id="roastOutput"></p>
+    <div id="commentList"></div>
+    <button onclick="goBack()">🔙 Back to Gallery</button>
   </div>
 
   <script>
-    let likeCount = 0;
-    const roastLines = [
-      "This meme’s so weak it skipped leg day.",
-      "I’ve seen better memes on a toaster.",
-      "Your meme needs a nap and a therapist.",
-      "This meme’s so dry it could be served with crackers.",
-      "Even your mirror cringed at this one."
-    ];
+    let username = localStorage.getItem("username") || "";
+    let currentImage = null;
+
+    window.onload = function() {
+      if (username) {
+        document.getElementById('loginScreen').style.display = "none";
+        document.getElementById('mainScreen').style.display = "block";
+      } else {
+        document.getElementById('loginScreen').style.display = "block";
+      }
+    };
+
+    function login() {
+      const input = document.getElementById('usernameInput').value.trim();
+      if (!input) return alert("Enter a username!");
+      username = input;
+      localStorage.setItem("username", username);
+      document.getElementById('loginScreen').style.display = "none";
+      document.getElementById('mainScreen').style.display = "block";
+    }
+
+    document.getElementById('imageUpload').addEventListener('change', function(event) {
+      const files = event.target.files;
+      for (let i = 0; i < files.length; i++) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.className = "thumbnail";
+          img.onclick = function() {
+            openEditor(e.target.result);
+          };
+          document.getElementById('gallery').appendChild(img);
+        };
+        reader.readAsDataURL(files[i]);
+      }
+    });
+
+    function openEditor(imageSrc) {
+      currentImage = imageSrc;
+      document.getElementById('mainScreen').style.display = "none";
+      document.getElementById('editorScreen').style.display = "block";
+
+      const canvas = document.getElementById('memeCanvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.onload = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+      img.src = imageSrc;
+    }
 
     function generateMeme() {
       const canvas = document.getElementById('memeCanvas');
       const ctx = canvas.getContext('2d');
-      const imageUpload = document.getElementById('imageUpload').files[0];
       const topText = document.getElementById('topText').value;
       const bottomText = document.getElementById('bottomText').value;
 
-      if (!imageUpload) return alert("Upload an image first!");
-
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const img = new Image();
-        img.onload = function() {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          ctx.font = "20px Impact";
-          ctx.fillStyle = "white";
-          ctx.strokeStyle = "black";
-          ctx.lineWidth = 2;
-          ctx.textAlign = "center";
-          ctx.fillText(topText, canvas.width / 2, 30);
-          ctx.strokeText(topText, canvas.width / 2, 30);
-          ctx.fillText(bottomText, canvas.width / 2, canvas.height - 20);
-          ctx.strokeText(bottomText, canvas.width / 2, canvas.height - 20);
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(imageUpload);
-    }
-
-    function likeMeme() {
-      likeCount++;
-      document.getElementById('likeCount').textContent = likeCount;
+      ctx.font = "20px Impact";
+      ctx.fillStyle = "white";
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.textAlign = "center";
+      ctx.fillText(topText, canvas.width / 2, 30);
+      ctx.strokeText(topText, canvas.width / 2, 30);
+      ctx.fillText(bottomText, canvas.width / 2, canvas.height - 20);
+      ctx.strokeText(bottomText, canvas.width / 2, canvas.height - 20);
     }
 
     function addComment() {
       const commentInput = document.getElementById('commentInput');
       const commentList = document.getElementById('commentList');
       if (commentInput.value.trim() === "") return;
-      const li = document.createElement('li');
-      li.textContent = commentInput.value;
-      commentList.appendChild(li);
+      const bubble = document.createElement('div');
+      bubble.className = "speech";
+      bubble.innerHTML = `<span class="username">${username}:</span> ${commentInput.value}`;
+      commentList.appendChild(bubble);
       commentInput.value = "";
     }
 
-    function roastMeme() {
-      const roast = roastLines[Math.floor(Math.random() * roastLines.length)];
-      document.getElementById('roastOutput').textContent = roast;
+    function goBack() {
+      document.getElementById('editorScreen').style.display = "none";
+      document.getElementById('mainScreen').style.display = "block";
     }
   </script>
 </body>
 </html>
+
+
