@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MeMeMe</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
+    #memeCanvas { border: 2px solid #333; margin-top: 10px; }
+    .controls, .comments, .roast { margin-top: 20px; }
+    .comment-box { width: 300px; }
+    button { margin: 5px; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h1>🔥 MeMeMe: Make Yourself Meme-able 🔥</h1>
+
+  <input type="file" id="imageUpload" accept="image/*"><br>
+  <input type="text" id="topText" placeholder="Top Text"><br>
+  <input type="text" id="bottomText" placeholder="Bottom Text"><br>
+  <button onclick="generateMeme()">Generate Meme</button><br>
+
+  <canvas id="memeCanvas" width="400" height="400"></canvas>
+
+  <div class="controls">
+    <button onclick="likeMeme()">👍 Like (<span id="likeCount">0</span>)</button>
+  </div>
+
+  <div class="comments">
+    <h3>💬 Comments</h3>
+    <input type="text" id="commentInput" class="comment-box" placeholder="Say something...">
+    <button onclick="addComment()">Post</button>
+    <ul id="commentList"></ul>
+  </div>
+
+  <div class="roast">
+    <h3>🤖 Roast Bot</h3>
+    <button onclick="roastMeme()">Roast Me</button>
+    <p id="roastOutput"></p>
+  </div>
+
+  <script>
+    let likeCount = 0;
+    const roastLines = [
+      "This meme’s so weak it skipped leg day.",
+      "I’ve seen better memes on a toaster.",
+      "Your meme needs a nap and a therapist.",
+      "This meme’s so dry it could be served with crackers.",
+      "Even your mirror cringed at this one."
+    ];
+
+    function generateMeme() {
+      const canvas = document.getElementById('memeCanvas');
+      const ctx = canvas.getContext('2d');
+      const imageUpload = document.getElementById('imageUpload').files[0];
+      const topText = document.getElementById('topText').value;
+      const bottomText = document.getElementById('bottomText').value;
+
+      if (!imageUpload) return alert("Upload an image first!");
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          ctx.font = "20px Impact";
+          ctx.fillStyle = "white";
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 2;
+          ctx.textAlign = "center";
+          ctx.fillText(topText, canvas.width / 2, 30);
+          ctx.strokeText(topText, canvas.width / 2, 30);
+          ctx.fillText(bottomText, canvas.width / 2, canvas.height - 20);
+          ctx.strokeText(bottomText, canvas.width / 2, canvas.height - 20);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(imageUpload);
+    }
+
+    function likeMeme() {
+      likeCount++;
+      document.getElementById('likeCount').textContent = likeCount;
+    }
+
+    function addComment() {
+      const commentInput = document.getElementById('commentInput');
+      const commentList = document.getElementById('commentList');
+      if (commentInput.value.trim() === "") return;
+      const li = document.createElement('li');
+      li.textContent = commentInput.value;
+      commentList.appendChild(li);
+      commentInput.value = "";
+    }
+
+    function roastMeme() {
+      const roast = roastLines[Math.floor(Math.random() * roastLines.length)];
+      document.getElementById('roastOutput').textContent = roast;
+    }
+  </script>
+</body>
+</html>
